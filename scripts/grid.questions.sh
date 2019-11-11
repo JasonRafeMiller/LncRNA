@@ -11,8 +11,12 @@
 #PBS -m n   ## no email
 #PBS -M < your email here >
 #PBS -N Grid
-cd /users/jrm0122/RunLncADeep/Run.001
-touch "GridWasHere.txt"
-cd /scratch/jrm0122/RunLncADeep/Run.001
-touch "GridWasHere.txt"
+####PBS -t 1-2    # better to use qsub -t 1-2
+if [[ $PBS_ARRAYID == '1' ]] ; then
+    cd /users/jrm0122/RunLncADeep/Run.001
+    touch "GridWasHere.txt"
+else
+    cd /scratch/jrm0122/RunLncADeep/Run.001
+    touch "GridWasHere.txt"
+fi
 
