@@ -11,6 +11,8 @@ $ python extractor.py bigfile.fasta 1 1 > reduced.fasta
 filename = sys.argv[1]
 start_at = int(sys.argv[2])
 group_size = int(sys.argv[3])
+outfile = sys.argv[4]
+file1 = open (outfile,"w")
 with open (filename,'rt') as fastafile:
     even_odd = 0
     num_in = 0
@@ -27,6 +29,6 @@ with open (filename,'rt') as fastafile:
             sequence = oneLine
             if (num_in >= start_at) and (num_out < group_size):
                 num_out = num_out + 1
-                print defline,
-                print sequence,
+                file1.write ( defline )
+                file1.write ( sequence )
 
