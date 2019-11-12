@@ -8,6 +8,9 @@ Example to extract just the first sequence.
 $ python extractor.py bigfile.fasta 1 1 > reduced.fasta
 '''
 
+if len(sys.argv) != 4:
+    print("Usage: p script <infile> <start> <size> <outfile>")
+    exit(4)
 filename = sys.argv[1]
 start_at = int(sys.argv[2])
 group_size = int(sys.argv[3])
