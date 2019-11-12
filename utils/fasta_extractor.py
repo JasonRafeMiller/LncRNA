@@ -8,7 +8,8 @@ Example to extract just the first sequence.
 $ python extractor.py bigfile.fasta 1 1 > reduced.fasta
 '''
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 4+1:
+    print("Number of arguments was %d \n" % (len(sys.argv)))
     print("Usage: p script <infile> <start> <size> <outfile>")
     exit(4)
 filename = sys.argv[1]
