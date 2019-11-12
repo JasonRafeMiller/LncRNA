@@ -9,13 +9,17 @@ $ python extractor.py bigfile.fasta 1 1 > reduced.fasta
 '''
 
 if len(sys.argv) != 4+1:
-    print("Number of arguments was %d \n" % (len(sys.argv)))
+    print("Number of arguments was %d" % (len(sys.argv)))
     print("Usage: p script <infile> <start> <size> <outfile>")
     exit(4)
 filename = sys.argv[1]
 start_at = int(sys.argv[2])
 group_size = int(sys.argv[3])
 outfile = sys.argv[4]
+if start_at < 1:
+    print("Staring position was %d" % (start_at))
+    print("Counting starts at 1.")
+    exit(5)
 file1 = open (outfile,"w")
 with open (filename,'rt') as fastafile:
     even_odd = 0
