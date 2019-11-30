@@ -6,7 +6,7 @@
 ####PBS -l nodes=1:ppn=1
 ####PBS -l procs=1
 #PBS -l nodes=1:ppn=1
-#PBS -l walltime=00:03:00
+#PBS -l walltime=03:00:00
 ###PBS -m ae   ## email onabort and exit
 #PBS -m n   ## no email
 ###PBS -M < your email here >
@@ -23,14 +23,15 @@ if [[ "x${PBS_ARRAYID}x" == "xx" ]] ; then
     exit 1
 fi
 
+#MYFILE=subset1.fasta     # subset for testing
 MYFILE=min200.lncRNA.fasta   # gencode lncRNA len>=200
-MYFILE=subset1.fasta     # subset for testing
+#MYFILE=min200.pcRNA.fasta   # gencode pcRNA len>=200
 
+#MYSIZE=5     # tiny size for testing
 MYSIZE=500     # sequences per grid job
-MYSIZE=5     # tiny size for testing
 
 MYSTART=$(( ${PBS_ARRAYID}-1 ))   # first sequence given array ID
-MYSTART=$(( ${MYSTART} * ${MYSIZE} ))   # first sequence given array ID
+MYSTART=$(( ${MYSTART} * ${MYSIZE} + 1))   # first sequence given array ID
 MYSUBSET=my.${PBS_ARRAYID}.fasta           # input fasta for one job
 MYOUTPUT=my.${PBS_ARRAYID}.out             # output directory for one job
 echo MYSTART $MYSTART
@@ -40,13 +41,13 @@ echo MYOUTPUT $MYOUTPUT
 echo Extract my group of sequences
 echo "python fasta_extractor.py $MYFILE $MYSTART $MYSIZE $MYSUBSET"
      python fasta_extractor.py $MYFILE $MYSTART $MYSIZE $MYSUBSET
-echo -n $?; echo " exit status"
+echo -n $?; echo " exit status fasta_extractor"
 ls -l
 
 echo Process the subset
 echo python LncADeep.py --MODE lncRNA --fasta $MYSUBSET --species human --model full --out $MYOUTPUT
      python LncADeep.py --MODE lncRNA --fasta $MYSUBSET --species human --model full --out $MYOUTPUT
-echo -n $?; echo " exit status"
+echo -n $?; echo " exit status LncADeep"
 ls -l
 
 echo -n "FINISH AT ";  date
