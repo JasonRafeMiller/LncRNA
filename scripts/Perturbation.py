@@ -77,6 +77,14 @@ class Perturbation:
                 outfile.write(newline);
                 mut = mut+1
 
+    def write_all_mutants(self):
+        seq=0
+        while seq < len(self.input_ids):
+            print("Writing #{}\n".format(seq))
+            self.mutate_all_positions(seq)
+            self.write_mutants(seq)
+            seq = seq+1
+
     def arg_parser():
         parser = argparse.ArgumentParser(description="Description.")
         parser.add_argument('fasta', help='FASTA filename', type=str)
@@ -95,8 +103,7 @@ if __name__ == '__main__':
         Perturbation.arg_parser()
         pt = Perturbation(args.fasta)
         pt.load_all()
-        pt.mutate_all_positions(0)  # for debugging, just do first sequence
-        pt.write_mutants(0)
+        pt.write_all_mutants()
         
     except Exception as e:
         print("\nERROR!\n")
