@@ -40,5 +40,9 @@ echo python LncADeep.py --MODE lncRNA --fasta $MYFILE --species human --model fu
      python LncADeep.py --MODE lncRNA --fasta $MYFILE --species human --model full --out $MYOUTPUT
 echo -n $?; echo " exit status LncADeep"
 ls -l
+echo CLEANUP
+mv -nv ${MYOUTPUT}_LncADeep_lncRNA_results/${MYOUTPUT}_LncADeep.results ${MYOUTPUT}
+#rm -rf ${MYOUTPUT}_LncADeep_lncRNA_results
+ls -l
 
 echo -n "FINISH AT ";  date

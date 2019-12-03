@@ -8,11 +8,14 @@ class Perturbation:
     input_num = 0     # sequence number within FASTA, starting with zero
     input_seq = ""
     input_id = ""
+    output_filename = ""
     mutant_seqs_from_one_input_seq=[]
 
     def __init__ (self,fn,off):
         self.input_filename=fn
         self.input_num=off
+        num=str(off)
+        self.output_filename="mutantsOfSeq."+num+".fasta"
 
     def mutate_base (self,base,offset):
         '''Offset must be in 0123, base must be in ACGT. A+1=C, etc.'''
@@ -86,20 +89,34 @@ class Perturbation:
                 else:
                     print ("ERROR: Never found sequence ().\n".format(seqnum))
 
-    def write_mutants(self):
+    def start_output(self):
+        filename=self.output_filename
         seq=str(self.input_num)
-        filename="mutantsOfSeq."+seq+".fasta"
         seqname=self.input_id
         newline="\n"
+        # Open and truncate the output file
         with open(filename,"w") as outfile:
+            defline=">original.ofSeq."+seq+" "+seqname
+            outfile.write(defline)
+            outfile.write(newline)
+            outfile.write(self.input_seq) 
+            outfile.write(newline)
+
+    def write_mutants(self):
+        filename=self.output_filename
+        seq=str(self.input_num)
+        seqname=self.input_id
+        newline="\n"
+        # Open and append to the output file
+        with open(filename,"a+") as outfile:
             mut = 0
             while mut < len(self.mutant_seqs_from_one_input_seq):
                 defline=">mutant."+str(mut)+".ofSeq."+seq+" "+seqname
                 outfile.write(defline)
-                outfile.write(newline);
+                outfile.write(newline)
                 mutant=self.mutant_seqs_from_one_input_seq[mut]
                 outfile.write(mutant) 
-                outfile.write(newline);
+                outfile.write(newline)
                 mut = mut+1
 
     def write_all_mutants(self):
@@ -126,6 +143,7 @@ if __name__ == '__main__':
         Perturbation.arg_parser()
         pt = Perturbation(args.fasta,args.seqnum)
         pt.load_all()
+        pt.start_output()
         pt.write_all_mutants()
         
     except Exception as e:
