@@ -4,13 +4,15 @@ import os
 
 class Perturbation:
     BASES = list("ACGTACGT")
-    seq_filename = ""
-    input_seqs=[]
-    input_ids=[]
+    input_filename = ""  # input FASTA filename
+    input_num = 0     # sequence number within FASTA, starting with zero
+    input_seq = ""
+    input_id = ""
     mutant_seqs_from_one_input_seq=[]
 
-    def __init__ (self,fn):
-        self.seq_filename=fn
+    def __init__ (self,fn,off):
+        self.input_filename=fn
+        self.input_num=off
 
     def mutate_base (self,base,offset):
         '''Offset must be in 0123, base must be in ACGT. A+1=C, etc.'''
@@ -19,12 +21,12 @@ class Perturbation:
         mut = self.BASES[pos+offset]
         return mut
 
-    def mutate_all_positions(self,seq_index):
+    def mutate_all_positions(self):
         # Assume string contains only ACGT.
         # Use one tight loop to minimize string/chararray conversions.
         # Load list of mutated strings.
         self.mutant_seqs_from_one_input_seq=[]
-        string=self.input_seqs[seq_index]
+        string=self.input_seq
         offset=1   
         chars = list(string)
         i = 0
@@ -37,39 +39,62 @@ class Perturbation:
             chars[i]=original
             i = i+1
 
-    def load_one(self,seq_id,sequence):
-        if (len(seq_id)>0 and len(sequence)>0):
-            self.input_ids.append(seq_id)
-            self.input_seqs.append(sequence)
+    def shorten(self,id):  
+        # Given sequence IDs like this:
+        # ENST00000641515.2|ENSG00000186092.6|OTTHUMG00000001094.4|
+        # Shorten them to this:
+        # ENST00000641515.2
+        short=id.split('|',1)[0]
+        return short
+
+    def load_one(self,seq_id,sequence,seqnum):
+        print ("Loading num={} id={}\n".format(seqnum,seq_id))
+        self.input_id = self.shorten(seq_id)
+        self.input_seq = sequence
 
     def load_all(self):
-        self.input_seqs=[]
-        self.input_ids=[]
+        seqnum = -1
         seq_name=""
         seq_parts=[]
         seq_full=""
-        with open(self.seq_filename,"r") as infile:
+        loaded=False
+        with open(self.input_filename,"r") as infile:
             for oneline in infile:
                 oneline=oneline.rstrip()
                 if (oneline.startswith(">")):
+                    # Before loading this sequence, output the previous one.
+                    # Stop reading once we find our target.
                     seq_full=''.join(seq_parts)
-                    self.load_one(seq_name,seq_full)
+                    if seqnum==self.input_num:  
+                        self.load_one(seq_name,seq_full,seqnum)
+                        loaded=True
+                        break
+                    # Now start loading this sequence, 
+                    # which spans at least 2 lines of input FASTA.
+                    seqnum = seqnum+1
                     seq_name=oneline[1:]
                     seq_parts=[]
                     seq_full=""
                 else:
                     seq_parts.append(oneline)
-            seq_full=''.join(seq_parts)
-            self.load_one(seq_name,seq_full)
+            # Last input sequence is a special case.
+            if not loaded:
+                if seqnum==self.input_num:
+                    seq_full=''.join(seq_parts)
+                    self.load_one(seq_name,seq_full,seqnum)
+                    loaded=True
+                else:
+                    print ("ERROR: Never found sequence ().\n".format(seqnum))
 
-    def write_mutants(self,seq_index):
-        filename="mutantsOfSeq."+str(seq_index)+".fasta"
-        seqname=self.input_ids[seq_index]
+    def write_mutants(self):
+        seq=str(self.input_num)
+        filename="mutantsOfSeq."+seq+".fasta"
+        seqname=self.input_id
         newline="\n"
         with open(filename,"w") as outfile:
             mut = 0
             while mut < len(self.mutant_seqs_from_one_input_seq):
-                defline=">mutant."+str(mut)+".ofSeq."+str(seq_index)+" "+seqname
+                defline=">mutant."+str(mut)+".ofSeq."+seq+" "+seqname
                 outfile.write(defline)
                 outfile.write(newline);
                 mutant=self.mutant_seqs_from_one_input_seq[mut]
@@ -78,16 +103,14 @@ class Perturbation:
                 mut = mut+1
 
     def write_all_mutants(self):
-        seq=0
-        while seq < len(self.input_ids):
-            print("Writing #{}\n".format(seq))
-            self.mutate_all_positions(seq)
-            self.write_mutants(seq)
-            seq = seq+1
+        print("Writing mutants of num={} id={}\n".format(self.input_num,self.input_id))
+        self.mutate_all_positions()
+        self.write_mutants()
 
     def arg_parser():
         parser = argparse.ArgumentParser(description="Description.")
         parser.add_argument('fasta', help='FASTA filename', type=str)
+        parser.add_argument('seqnum', help='seq position within FASTA file, 0-based', type=int)
         parser.add_argument('--debug', help='See tracebacks', action='store_true')
         global args
         args = parser.parse_args()
@@ -101,7 +124,7 @@ class Perturbation:
 if __name__ == '__main__':
     try:
         Perturbation.arg_parser()
-        pt = Perturbation(args.fasta)
+        pt = Perturbation(args.fasta,args.seqnum)
         pt.load_all()
         pt.write_all_mutants()
         
