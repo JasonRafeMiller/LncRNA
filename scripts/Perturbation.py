@@ -42,7 +42,7 @@ class Perturbation:
     def shorten(self,id):  
         # Given sequence IDs like this:
         # ENST00000641515.2|ENSG00000186092.6|OTTHUMG00000001094.4|
-        # Shorten them to this:
+        # Shorten to this:
         # ENST00000641515.2
         short=id.split('|',1)[0]
         return short
