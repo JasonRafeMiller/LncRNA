@@ -10,12 +10,16 @@ class Perturbation:
     input_id = ""
     output_filename = ""
     mutant_seqs_from_one_input_seq=[]
+    mode="SUB"
+    maxlen=-1
 
-    def __init__ (self,fn,off):
+    def __init__ (self,fn,off,mode,maxlen):
         self.input_filename=fn
         self.input_num=off
         num=str(off)
         self.output_filename="mutantsOfSeq."+num+".fasta"
+        self.mode=mode
+        self.maxlen=maxlen
 
     def mutate_base (self,base,offset):
         '''Offset must be in 0123, base must be in ACGT. A+1=C, etc.'''
@@ -24,7 +28,7 @@ class Perturbation:
         mut = self.BASES[pos+offset]
         return mut
 
-    def mutate_all_positions(self):
+    def substitute_all_positions(self):
         # Assume string contains only ACGT.
         # Use one tight loop to minimize string/chararray conversions.
         # Load list of mutated strings.
@@ -42,6 +46,26 @@ class Perturbation:
             chars[i]=original
             i = i+1
 
+    def delete_all_positions(self):
+        # Assume string contains only ACGT.
+        # Use one tight loop to minimize string/chararray conversions.
+        # Load list of mutated strings.
+        self.mutant_seqs_from_one_input_seq=[]
+        string=self.input_seq
+        chars = list(string)
+        i = 0
+        L = len(chars)
+        while i < L:
+            if i==0:
+                temp=chars[i+1:]
+            elif i+1 < L:
+                temp=chars[:i]+chars[i+1:]
+            else:
+                temp=chars[:i]
+            next_mutant = "".join(temp)
+            self.mutant_seqs_from_one_input_seq.append(next_mutant)
+            i = i+1
+
     def shorten(self,id):  
         # Given sequence IDs like this:
         # ENST00000641515.2|ENSG00000186092.6|OTTHUMG00000001094.4|
@@ -51,9 +75,12 @@ class Perturbation:
         return short
 
     def load_one(self,seq_id,sequence,seqnum):
-        print ("Loading num={} id={}\n".format(seqnum,seq_id))
-        self.input_id = self.shorten(seq_id)
-        self.input_seq = sequence
+        if self.maxlen < 0 or length(self.input_seq) <= self.maxlen:
+            print ("Loading num={} id={}\n".format(seqnum,seq_id))
+            self.input_id = self.shorten(seq_id)
+            self.input_seq = sequence
+            return True
+        return False
 
     def load_all(self):
         seqnum = -1
@@ -69,9 +96,9 @@ class Perturbation:
                     # Stop reading once we find our target.
                     seq_full=''.join(seq_parts)
                     if seqnum==self.input_num:  
-                        self.load_one(seq_name,seq_full,seqnum)
-                        loaded=True
-                        break
+                        if self.load_one(seq_name,seq_full,seqnum):
+                            loaded=True
+                            break
                     # Now start loading this sequence, 
                     # which spans at least 2 lines of input FASTA.
                     seqnum = seqnum+1
@@ -121,13 +148,18 @@ class Perturbation:
 
     def write_all_mutants(self):
         print("Writing mutants of num={} id={}\n".format(self.input_num,self.input_id))
-        self.mutate_all_positions()
+        if self.mode=="SUB":
+            self.substitute_all_positions()
+        else:
+            self.delete_all_positions()
         self.write_mutants()
 
     def arg_parser():
         parser = argparse.ArgumentParser(description="Description.")
         parser.add_argument('fasta', help='FASTA filename', type=str)
         parser.add_argument('seqnum', help='seq position within FASTA file, 0-based', type=int)
+        parser.add_argument('--maxlen', help='Ignore sequences longer than this', type=int)
+        parser.add_argument('--delete', help='Delete rather than mutate', action='store_true')
         parser.add_argument('--debug', help='See tracebacks', action='store_true')
         global args
         args = parser.parse_args()
@@ -141,7 +173,11 @@ class Perturbation:
 if __name__ == '__main__':
     try:
         Perturbation.arg_parser()
-        pt = Perturbation(args.fasta,args.seqnum)
+        mode="SUB"
+        if args.delete: mode="DEL"
+        maxlen=-1
+        if args.maxlen: maxlen=args.maxlen
+        pt = Perturbation(args.fasta,args.seqnum,mode,maxlen)
         pt.load_all()
         pt.start_output()
         pt.write_all_mutants()
