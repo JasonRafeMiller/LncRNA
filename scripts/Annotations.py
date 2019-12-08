@@ -31,15 +31,35 @@ class Annotations:
         with open(self.infile,"r") as infile, open(self.outfile,"w") as outfile:
             tsvin = csv.reader(infile, delimiter='\t')
             tsvout = csv.writer(outfile, delimiter='\t')
+            # keep genomic start/end and transcriptomic start/end
+            this_feature={'gs':0,'ge':0,'ts':0,'te':0}
+            prev_exon={'gs':0,'ge':0,'ts':0,'te':0}
             for oneline in tsvin:
                 if self.is_data_line(oneline):
                     comments=oneline[8]
-                    transcript=self.extract_transcript(comments)
+                    tr_id=self.extract_transcript(comments)
                     feature=oneline[2]
-                    genome_start=oneline[3]
-                    genome_end=oneline[4]
-                    genome_strand=oneline[6]
-                    outs=(transcript,feature,genome_start,genome_end,genome_strand)
+                    gs=int(oneline[3])
+                    ge=int(oneline[4])
+                    strand=oneline[6]
+                    length=ge-gs+1
+                    if feature=="transcript":
+                        ts=1
+                        te=ts+length-1
+                        this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                        prev_exon={'gs':0,'ge':0,'ts':0,'te':0}
+                    elif feature=="exon":
+                        ts=prev_exon['te']+1
+                        te=ts+length-1
+                        this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                        prev_exon={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                    else:
+                        ts=prev_exon['ts']+(gs-prev_exon['gs'])
+                        te=ts+length-1                        
+                        this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                    outs=(tr_id,feature,strand,
+                          this_feature['gs'],this_feature['ge'],
+                          this_feature['ts'],this_feature['te'])
                     tsvout.writerow(outs)
                     
                     
