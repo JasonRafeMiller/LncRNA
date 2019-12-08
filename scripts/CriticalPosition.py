@@ -5,10 +5,12 @@ import csv
 
 class CriticalPosition:
     scorefile=""
+    positionfile=""
     database=[]
 
-    def __init__ (self,fn):
-        self.scorefile=fn
+    def __init__ (self,inf,outf):
+        self.scorefile=inf
+        self.positionfile=outf
         self.database=[]
 
     def grow_db (self,seqnum):
@@ -61,45 +63,24 @@ class CriticalPosition:
                     position=int(idwords[1])  # string like mutant.0.ofSeq.0
                     self.load_mutant(seqnum,position,score,classification)
 
-    def start_output(self):
-        filename=self.output_filename
-        seq=str(self.input_num)
-        seqname=self.input_id
-        newline="\n"
-        # Open and truncate the output file
-        with open(filename,"w") as outfile:
-            defline=">original.ofSeq."+seq+" "+seqname
-            outfile.write(defline)
-            outfile.write(newline)
-            outfile.write(self.input_seq) 
-            outfile.write(newline)
-
-    def write_mutants(self):
-        filename=self.output_filename
-        seq=str(self.input_num)
-        seqname=self.input_id
-        newline="\n"
-        # Open and append to the output file
-        with open(filename,"a+") as outfile:
-            mut = 0
-            while mut < len(self.mutant_seqs_from_one_input_seq):
-                defline=">mutant."+str(mut)+".ofSeq."+seq+" "+seqname
-                outfile.write(defline)
-                outfile.write(newline)
-                mutant=self.mutant_seqs_from_one_input_seq[mut]
-                outfile.write(mutant) 
-                outfile.write(newline)
-                mut = mut+1
-
-    def compute_all(self):
-        print ("Computing...")
-
     def write_all(self):
         print ("Writing...")
+        fn=['sequence','original_score','original_class','mutant_position','mutant_score','mutant_class']
+        with open(self.positionfile,"w") as outfile:
+            tsvout = csv.writer(outfile, delimiter='\t')
+            i=0
+            while i < len(self.database):
+                datum=self.database[i]
+                if datum:
+                    tsvout.writerow((i,datum['original_score'],datum['original_class'],
+                                     datum['mutant_position'],datum['mutant_score'],
+                                     datum['mutant_class']))
+                i=i+1
 
     def arg_parser():
         parser = argparse.ArgumentParser(description="Determine position with maximum effect on classification.")
-        parser.add_argument('scorefile', help='three-column text file', type=str)
+        parser.add_argument('scorefile', help='tsv input file', type=str)
+        parser.add_argument('positionfile', help='tsv output file', type=str)
         parser.add_argument('--debug', help='See tracebacks', action='store_true')
         global args
         args = parser.parse_args()
@@ -110,9 +91,8 @@ class CriticalPosition:
 if __name__ == '__main__':
     try:
         CriticalPosition.arg_parser()
-        cp = CriticalPosition(args.scorefile)
+        cp = CriticalPosition(args.scorefile,args.positionfile)
         cp.load_all()
-        cp.compute_all()
         cp.write_all()
         
     except Exception as e:
