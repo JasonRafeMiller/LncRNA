@@ -21,13 +21,16 @@ class Annotations:
         words=col9.split(';')
         for word in words:
             if word.startswith("ID=ENST"):
-                return word
+                return word[3:]
+            if word.startswith("Parent=ENST"):
+                return word[7:]
         return None
 
     def parse(self):
         print ("Parsing...")
         with open(self.infile,"r") as infile, open(self.outfile,"w") as outfile:
             tsvin = csv.reader(infile, delimiter='\t')
+            tsvout = csv.writer(outfile, delimiter='\t')
             for oneline in tsvin:
                 if self.is_data_line(oneline):
                     comments=oneline[8]
@@ -36,6 +39,9 @@ class Annotations:
                     genome_start=oneline[3]
                     genome_end=oneline[4]
                     genome_strand=oneline[6]
+                    outs=(transcript,feature,genome_start,genome_end,genome_strand)
+                    tsvout.writerow(outs)
+                    
                     
 
     def arg_parser():
