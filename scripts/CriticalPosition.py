@@ -15,12 +15,16 @@ class CriticalPosition:
         while seqnum>=len(self.database):
             self.database.append({})            
 
-    def load_one (self,original,seqnum,score,classification):
+    def load_one (self,original,seqnum,position,score,classification):
         self.grow_db(seqnum)
+        datum=self.database[seqnum]
         if original:
-            datum=self.database[seqnum]
             datum['original_score']=score
             datum['original_class']=classification
+        else:
+            datum['mutant_score']=score
+            datum['mutant_class']=classification
+            datum['critical_position']=position
 
     def load_all(self):
         print ("Loading...")
@@ -34,11 +38,12 @@ class CriticalPosition:
                 idwords=seqid.split('.')
                 is_original=(idwords[0]=="original")
                 if is_original:
-                    seqnum=idwords[2]
+                    seqnum=int(idwords[2])
+                    position=-1
                 else:
-                    seqnum=idwords[3]
-                seqnum=int(seqnum)
-                self.load_one(is_original,seqnum,score,classification)
+                    seqnum=int(idwords[3])
+                    position=int(idwords[1])
+                self.load_one(is_original,seqnum,position,score,classification)
 
     def start_output(self):
         filename=self.output_filename
