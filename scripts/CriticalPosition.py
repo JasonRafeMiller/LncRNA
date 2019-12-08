@@ -33,7 +33,7 @@ class CriticalPosition:
             save=True
             # This is the first mutant seen
         else:
-            original_score=datum['original_score']=score
+            original_score=datum['original_score']
             mutant_score=datum['mutant_score']
             this_difference=abs(original_score-score)
             prev_difference=abs(original_score-mutant_score)
@@ -68,13 +68,18 @@ class CriticalPosition:
         fn=['sequence','original_score','original_class','mutant_position','mutant_score','mutant_class']
         with open(self.positionfile,"w") as outfile:
             tsvout = csv.writer(outfile, delimiter='\t')
+            tsvout.writerow(('seqnum','mutant_position',
+                             'original_class','mutant_class',
+                             'original_score','mutant_score','delta_score'))
             i=0
             while i < len(self.database):
                 datum=self.database[i]
+                # Warning: some jobs failed so data are missing for some sequences
                 if datum:
-                    tsvout.writerow((i,datum['original_score'],datum['original_class'],
-                                     datum['mutant_position'],datum['mutant_score'],
-                                     datum['mutant_class']))
+                    delta=datum['original_score']-datum['mutant_score'] 
+                    tsvout.writerow((i,datum['mutant_position'],
+                                     datum['original_class'],datum['mutant_class'],
+                                     datum['original_score'],datum['mutant_score'],delta))
                 i=i+1
 
     def arg_parser():
