@@ -11,14 +11,32 @@ class Annotations:
         self.infile=inf
         self.outfile=outf
 
+    def is_data_line (self,list_of_fields):        
+        if len(list_of_fields)>=9:
+            if not list_of_fields[0].startswith("#"):
+                return True
+        return False
+
+    def extract_transcript(self,col9):
+        words=col9.split(';')
+        for word in words:
+            if word.startswith("ID=ENST"):
+                return word
+        return None
+
     def parse(self):
         print ("Parsing...")
-        seqnum=-1
-        with open(self.infile,"r") as infile:
+        with open(self.infile,"r") as infile, open(self.outfile,"w") as outfile:
             tsvin = csv.reader(infile, delimiter='\t')
             for oneline in tsvin:
-                if not oneline[0].startswith("#") and len(oneline)>=9:
-                    print(oneline[8])
+                if self.is_data_line(oneline):
+                    comments=oneline[8]
+                    transcript=self.extract_transcript(comments)
+                    feature=oneline[2]
+                    genome_start=oneline[3]
+                    genome_end=oneline[4]
+                    genome_strand=oneline[6]
+                    
 
     def arg_parser():
         parser = argparse.ArgumentParser(description="Extract intervals from gff3 file.")
