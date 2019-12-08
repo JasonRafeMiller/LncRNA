@@ -15,16 +15,32 @@ class CriticalPosition:
         while seqnum>=len(self.database):
             self.database.append({})            
 
-    def load_one (self,original,seqnum,position,score,classification):
+    def load_original (self,seqnum,score,classification):
         self.grow_db(seqnum)
         datum=self.database[seqnum]
-        if original:
-            datum['original_score']=score
-            datum['original_class']=classification
+        datum['original_score']=score
+        datum['original_class']=classification
+
+    def load_mutant (self,seqnum,position,score,classification):
+        datum=self.database[seqnum]
+        if not datum:
+            print ("ERROR! MUTANT BEFORE ORIGINAL. SEQNUM={}".format(seqnum))
+            exit(1)
+        save=False
+        if 'mutant_class' not in datum:
+            save=True
+            # This is the first mutant seen
         else:
+            original_score=datum['original_score']=score
+            mutant_score=datum['mutant_score']
+            this_difference=abs(original_score-score)
+            prev_difference=abs(original_score-mutant_score)
+            if this_difference > prev_difference:
+                save=True
+        if save:
             datum['mutant_score']=score
             datum['mutant_class']=classification
-            datum['critical_position']=position
+            datum['mutant_position']=position
 
     def load_all(self):
         print ("Loading...")
@@ -33,17 +49,17 @@ class CriticalPosition:
             tsvin = csv.reader(infile, delimiter='\t')
             for oneline in tsvin:
                 seqid=oneline[0]
-                score=oneline[1]
+                score=float(oneline[1])
                 classification=oneline[2]
                 idwords=seqid.split('.')
                 is_original=(idwords[0]=="original")
                 if is_original:
-                    seqnum=int(idwords[2])
-                    position=-1
+                    seqnum=int(idwords[2])  # string like original.ofSeq.0
+                    self.load_original(seqnum,score,classification)
                 else:
-                    seqnum=int(idwords[3])
-                    position=int(idwords[1])
-                self.load_one(is_original,seqnum,position,score,classification)
+                    seqnum=int(idwords[3])  # string like mutant.0.ofSeq.0
+                    position=int(idwords[1])  # string like mutant.0.ofSeq.0
+                    self.load_mutant(seqnum,position,score,classification)
 
     def start_output(self):
         filename=self.output_filename
