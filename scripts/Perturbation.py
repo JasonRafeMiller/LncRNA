@@ -155,7 +155,7 @@ class Perturbation:
         self.write_mutants()
 
     def arg_parser():
-        parser = argparse.ArgumentParser(description="Description.")
+        parser = argparse.ArgumentParser(description="Generate mutant versions of a DNA sequence.")
         parser.add_argument('fasta', help='FASTA filename', type=str)
         parser.add_argument('seqnum', help='seq position within FASTA file, 0-based', type=int)
         parser.add_argument('--maxlen', help='Ignore sequences longer than this', type=int)
