@@ -42,32 +42,31 @@ class Annotations:
                 if self.is_data_line(oneline):
                     comments=oneline[8]
                     tr_id=self.extract_transcript(comments)
+                    feature=oneline[2]
+                    gs=int(oneline[3])
+                    ge=int(oneline[4])
+                    strand="pos"
+                    if oneline[6]=="-": strand="neg"
+                    length=ge-gs+1
+                    if feature=="transcript":
+                        ts=1
+                        te=ts+length-1
+                        this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                        prev_exon={'gs':0,'ge':0,'ts':0,'te':0}
+                    elif feature=="exon":
+                        ts=prev_exon['te']+1
+                        te=ts+length-1
+                        this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                        prev_exon={'gs':gs,'ge':ge,'ts':ts,'te':te}
+                    else:
+                        ts=prev_exon['ts']+(gs-prev_exon['gs'])
+                        te=ts+length-1                        
+                        this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
                     if tr_id:    # genes do not have a transcript id, so ignore them
-                        feature=oneline[2]
-                        gs=int(oneline[3])
-                        ge=int(oneline[4])
-                        strand="pos"
-                        if oneline[6]=="-":
-                            strand="neg"
-                        length=ge-gs+1
-                        if feature=="transcript":
-                            ts=1
-                            te=ts+length-1
-                            this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
-                            prev_exon={'gs':0,'ge':0,'ts':0,'te':0}
-                        elif feature=="exon":
-                            ts=prev_exon['te']+1
-                            te=ts+length-1
-                            this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
-                            prev_exon={'gs':gs,'ge':ge,'ts':ts,'te':te}
-                        else:
-                            ts=prev_exon['ts']+(gs-prev_exon['gs'])
-                            te=ts+length-1                        
-                            this_feature={'gs':gs,'ge':ge,'ts':ts,'te':te}
-                            outs=(tr_id,feature,strand,
-                                  this_feature['gs'],this_feature['ge'],
-                                  this_feature['ts'],this_feature['te'])
-                            tsvout.writerow(outs)
+                        outs=(tr_id,feature,strand,
+                              this_feature['gs'],this_feature['ge'],
+                              this_feature['ts'],this_feature['te'])
+                        tsvout.writerow(outs)
                                 
                     
 
